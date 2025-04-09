@@ -35,7 +35,7 @@ export default function WeatherForecast({ forecastData }) {
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       {dailyForecast.map((day, index) => (
         <Card key={index} className="overflow-hidden">
-          <CardHeader className="p-4 pb-2 text-center bg-gray-50">
+          <CardHeader className="p-4 pb-2 text-center">
             <CardTitle className="text-lg font-medium">{day.day}</CardTitle>
             <CardDescription>{day.date}</CardDescription>
           </CardHeader>

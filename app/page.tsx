@@ -1,103 +1,269 @@
-import Image from "next/image";
+"use client"
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function Home() {
+import WeatherSearch from './components/WeatherSearch';
+import CurrentWeather from './components/CurrentWeather';
+import WeatherForecast from './components/WeatherForecast';
+import SearchHistory from './components/SearchHistory';
+import LoadingSpinner from './components/LoadingSpinner';
+
+import { 
+  fetchWeatherByCity, 
+  fetchForecastByCity, 
+  fetchWeatherByCoords, 
+  fetchForecastByCoords 
+} from '@/utils/weatherService';
+
+interface WeatherCoord {
+  lon: number;
+  lat: number;
+}
+
+interface WeatherCondition {
+  id: number;
+  main: string;
+  description: string;
+  icon: string;
+}
+
+interface WeatherMain {
+  temp: number;
+  feels_like: number;
+  temp_min: number;
+  temp_max: number;
+  pressure: number;
+  humidity: number;
+}
+
+interface WeatherWind {
+  speed: number;
+  deg: number;
+  gust?: number;
+}
+
+interface WeatherSys {
+  type: number;
+  id: number;
+  country: string;
+  sunrise: number;
+  sunset: number;
+}
+
+interface WeatherData {
+  coord: WeatherCoord;
+  weather: WeatherCondition[];
+  base: string;
+  main: WeatherMain;
+  visibility: number;
+  wind: WeatherWind;
+  clouds: { all: number };
+  dt: number;
+  sys: WeatherSys;
+  timezone: number;
+  id: number;
+  name: string;
+  cod: number;
+}
+
+interface ForecastItem {
+  dt: number;
+  main: WeatherMain;
+  weather: WeatherCondition[];
+  clouds: { all: number };
+  wind: WeatherWind;
+  visibility: number;
+  pop: number;
+  sys: {
+    pod: string;
+  };
+  dt_txt: string;
+}
+
+interface ForecastData {
+  cod: string;
+  message: number;
+  cnt: number;
+  list: ForecastItem[];
+  city: {
+    id: number;
+    name: string;
+    coord: WeatherCoord;
+    country: string;
+    population: number;
+    timezone: number;
+    sunrise: number;
+    sunset: number;
+  };
+}
+
+interface LocationHistory {
+  name: string;
+  country: string;
+  coords: WeatherCoord;
+  timestamp: string;
+}
+
+export default function WeatherApp() {
+  const [city, setCity] = useState<string>('');
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+  const [forecast, setForecast] = useState<ForecastData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchHistory, setSearchHistory] = useState<LocationHistory[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('current');
+
+  useEffect(() => {
+    loadSearchHistory();
+  }, []);
+
+  const loadSearchHistory = (): void => {
+    if (typeof window !== 'undefined') {
+      const savedHistory = localStorage.getItem('weatherSearchHistory');
+      if (savedHistory) {
+        setSearchHistory(JSON.parse(savedHistory));
+      }
+    }
+  };
+
+  const addToSearchHistory = (data: WeatherData): void => {
+    const location: LocationHistory = {
+      name: data.name,
+      country: data.sys.country,
+      coords: data.coord,
+      timestamp: new Date().toISOString()
+    };
+
+    const updatedHistory = [...searchHistory];
+    const existingIndex = updatedHistory.findIndex(
+      item => item.name === location.name && item.country === location.country
+    );
+
+    if (existingIndex !== -1) {
+      updatedHistory[existingIndex].timestamp = location.timestamp;
+    } else {
+      updatedHistory.push(location);
+    }
+
+    setSearchHistory(updatedHistory);
+    localStorage.setItem('weatherSearchHistory', JSON.stringify(updatedHistory));
+  };
+
+  const getWeather = async (): Promise<void> => {
+    if (!city.trim()) {
+      setError('Please enter a city name');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const currentData = await fetchWeatherByCity(city);
+      setCurrentWeather(currentData);
+      addToSearchHistory(currentData);
+
+      const forecastData = await fetchForecastByCity(city);
+      setForecast(forecastData);
+
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getLocationWeather = (): void => {
+    if (navigator.geolocation) {
+      setLoading(true);
+      setError(null);
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+
+          try {
+            const currentData = await fetchWeatherByCoords(latitude, longitude);
+            setCurrentWeather(currentData);
+            setCity(currentData.name);
+            addToSearchHistory(currentData);
+
+            const forecastData = await fetchForecastByCoords(latitude, longitude);
+            setForecast(forecastData);
+
+          } catch (error) {
+            setError(error instanceof Error ? error.message : 'An unknown error occurred');
+          } finally {
+            setLoading(false);
+          }
+        },
+        (error) => {
+          setLoading(false);
+          setError("Unable to retrieve your location. Please ensure location services are enabled.");
+        }
+      );
+    } else {
+      setError("Geolocation is not supported by this browser.");
+    }
+  };
+
+  const searchHistoryCity = (cityName: string): void => {
+    setCity(cityName);
+    getWeather();
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 text-white py-10 px-4">
+      <div className="max-w-4xl mx-auto">
+        <Card className="w-full bg-gray-800 text-white shadow-xl rounded-2xl mb-8">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-center">🌤️ Weather Forecast App</CardTitle>
+            <CardDescription className="text-center text-gray-300">
+              Get current weather & upcoming 5-day forecast
+            </CardDescription>
+          </CardHeader>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          <CardContent>
+            <WeatherSearch 
+              city={city} 
+              setCity={setCity} 
+              getWeather={getWeather} 
+              getLocationWeather={getLocationWeather} 
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+            {loading && <LoadingSpinner />}
+
+            {error && (
+              <Alert variant="destructive" className="my-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {currentWeather && (
+              <>
+                <div className="mt-6">
+                  <h2 className="text-xl font-semibold mb-2">Current Weather</h2>
+                  <CurrentWeather weatherData={currentWeather} />
+                </div>
+
+                {forecast && (
+                  <div className="mt-8">
+                    <h2 className="text-xl font-semibold mb-2">5-Day Forecast</h2>
+                    <WeatherForecast forecastData={forecast} />
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <SearchHistory 
+          historyData={searchHistory} 
+          onSelectCity={searchHistoryCity} 
+        />
+      </div>
     </div>
   );
 }

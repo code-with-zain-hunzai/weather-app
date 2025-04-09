@@ -18,7 +18,6 @@ export default function SearchHistory({ historyData, onSelectCity }) {
           {historyData.slice().reverse().map((location, index) => (
             <Button
               key={index}
-              variant="outline"
               className="truncate justify-start"
               onClick={() => onSelectCity(location.name)}
             >

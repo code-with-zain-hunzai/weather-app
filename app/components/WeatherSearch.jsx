@@ -25,7 +25,7 @@ export default function WeatherSearch({ city, setCity, getWeather, getLocationWe
         <Search size={18} />
         <span>Search</span>
       </Button>
-      <Button variant="outline" onClick={getLocationWeather} className="flex items-center gap-2">
+      <Button  onClick={getLocationWeather} className="flex items-center gap-2">
         <MapPin size={18} />
         <span>Use My Location</span>
       </Button>

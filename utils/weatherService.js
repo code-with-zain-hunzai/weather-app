@@ -1,4 +1,4 @@
-const API_KEY = 'ed429cca443f98e23ccf585fd0c4f5d9';
+const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
 
 export const fetchWeatherByCity = async (city) => {
   const currentResponse = await fetch(
