@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import WeatherSearch from './components/WeatherSearch';
 import CurrentWeather from './components/CurrentWeather';
 import WeatherForecast from './components/WeatherForecast';
+import UpcomingHoursWeather from './components/UpcomingHoursWeather'; 
 import SearchHistory from './components/SearchHistory';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -249,10 +250,14 @@ export default function WeatherApp() {
                 </div>
 
                 {forecast && (
-                  <div className="mt-8">
-                    <h2 className="text-xl font-semibold mb-2">5-Day Forecast</h2>
-                    <WeatherForecast forecastData={forecast} />
-                  </div>
+                  <>
+                    <UpcomingHoursWeather forecastData={forecast} />
+                    
+                    <div className="mt-8">
+                      <h2 className="text-xl font-semibold mb-2">5-Day Forecast</h2>
+                      <WeatherForecast forecastData={forecast} />
+                    </div>
+                  </>
                 )}
               </>
             )}

@@ -4,7 +4,6 @@ import WeatherIcon from './WeatherIcon';
 export default function WeatherForecast({ forecastData }) {
   if (!forecastData) return null;
 
-  // Group forecast data by date
   const groupForecastByDay = () => {
     const dailyData = {};
     
