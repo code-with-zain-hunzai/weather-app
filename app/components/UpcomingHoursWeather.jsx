@@ -5,7 +5,6 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Thermometer, Wind, Droplets, Cloud, Clock } from "lucide-react";
 import WeatherIcon from './WeatherIcon';
 
-// This component shows weather forecast for upcoming hours
 export default function UpcomingHoursWeather({ forecastData }) {
   const [startIndex, setStartIndex] = useState(0);
   
