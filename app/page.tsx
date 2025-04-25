@@ -1,7 +1,8 @@
 "use client"
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import WeatherSearch from './components/WeatherSearch';
@@ -107,6 +108,30 @@ interface LocationHistory {
   timestamp: string;
 }
 
+// ── Framer Motion Variants ─────────────────────────────────────────────────────
+const pageVariants = {
+  hidden:   { opacity: 0 },
+  visible:  { opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.2, duration: 0.8 } },
+};
+
+const cardVariants = {
+  hidden:  { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  hover:   { scale: 1.02, boxShadow: '0px 10px 20px rgba(0,0,0,0.2)' },
+  tap:     { scale: 0.98 },
+};
+
+const fadeInUp = {
+  hidden:  { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
+
+const iconVariants = {
+  hidden:  { opacity: 0, y: -20 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 120, damping: 12 } },
+};
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function WeatherApp() {
   const [city, setCity] = useState<string>('');
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
@@ -114,7 +139,7 @@ export default function WeatherApp() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<LocationHistory[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('current');
+  // const [activeTab, setActiveTab] = useState<string>('current');
 
   useEffect(() => {
     loadSearchHistory();
@@ -200,7 +225,7 @@ export default function WeatherApp() {
             setLoading(false);
           }
         },
-        (error) => {
+        () => {
           setLoading(false);
           setError("Unable to retrieve your location. Please ensure location services are enabled.");
         }
@@ -216,59 +241,100 @@ export default function WeatherApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 text-white py-10 px-4">
-      <div className="max-w-4xl mx-auto">
-        <Card className="w-full bg-gray-800 text-white shadow-xl rounded-2xl mb-8">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center">🌤️ Weather Forecast App</CardTitle>
-            <CardDescription className="text-center text-gray-300">
-              Get current weather & upcoming 5-day forecast
-            </CardDescription>
-          </CardHeader>
+    <motion.main
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen bg-gradient-to-br from-indigo-900 via-gray-900 to-black text-white py-12 px-6"
+    >
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* ── Search & Current Weather Card ─────────────────────────────── */}
+        <motion.div
+          variants={cardVariants}
+          initial="hidden"
+          animate="visible"
+          whileHover="hover"
+          whileTap="tap"
+        >
+          
+          <Card className="bg-gradient-to-br from-gray-800 to-gray-700 bg-opacity-40 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-600">
+            <CardHeader className="p-6">
+              {currentWeather && (
+                <motion.div 
+                  variants={iconVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="flex justify-center mb-4"
+                >
+                  <img
+                    src={`https://openweathermap.org/img/wn/${currentWeather.weather[0].icon}@4x.png`}
+                    alt={currentWeather.weather[0].description}
+                    className="w-24 h-24"
+                  />
+                </motion.div>
+              )}
 
-          <CardContent>
-            <WeatherSearch 
-              city={city} 
-              setCity={setCity} 
-              getWeather={getWeather} 
-              getLocationWeather={getLocationWeather} 
-            />
+              <CardTitle className="text-4xl font-extrabold text-center tracking-wide">
+                🌤️ Weather Forecast App
+              </CardTitle>
+              <CardDescription className="text-center text-gray-300 mt-2">
+                Current weather & 5-day forecast
+              </CardDescription>
+            </CardHeader>
 
-            {loading && <LoadingSpinner />}
+            <CardContent className="p-6 space-y-6">
+              <WeatherSearch
+                city={city}
+                setCity={setCity}
+                getWeather={getWeather}
+                getLocationWeather={getLocationWeather}
+              />
 
-            {error && (
-              <Alert variant="destructive" className="my-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+              {loading && (
+                <motion.div variants={fadeInUp} className="flex justify-center">
+                  <LoadingSpinner />
+                </motion.div>
+              )}
 
-            {currentWeather && (
-              <>
-                <div className="mt-6">
-                  <h2 className="text-xl font-semibold mb-2">Current Weather</h2>
+              {error && (
+                <motion.div variants={fadeInUp}>
+                  <Alert variant="destructive" className="my-4">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+
+              {currentWeather && (
+                <motion.section variants={fadeInUp} className="p-4 bg-gray-800 bg-opacity-50 rounded-xl shadow-inner">
+                  <h2 className="text-2xl font-semibold mb-2">Current Weather</h2>
                   <CurrentWeather weatherData={currentWeather} />
-                </div>
+                </motion.section>
+              )}
 
-                {forecast && (
-                  <>
+              {forecast && currentWeather && (
+                <>
+                  <motion.section variants={fadeInUp} className="mt-8">
                     <UpcomingHoursWeather forecastData={forecast} />
-                    
-                    <div className="mt-8">
-                      <h2 className="text-xl font-semibold mb-2">5-Day Forecast</h2>
-                      <WeatherForecast forecastData={forecast} />
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  </motion.section>
 
-        <SearchHistory 
-          historyData={searchHistory} 
-          onSelectCity={searchHistoryCity} 
-        />
+                  <motion.section variants={fadeInUp} className="mt-8 p-4 bg-gray-800 bg-opacity-50 rounded-xl shadow-inner">
+                    <h2 className="text-2xl font-semibold mb-2">5-Day Forecast</h2>
+                    <WeatherForecast forecastData={forecast} />
+                  </motion.section>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ── Search History ──────────────────────────────────────────────── */}
+        <motion.div variants={fadeInUp} className="p-6 bg-gray-800 bg-opacity-30 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-700">
+          <SearchHistory
+            historyData={searchHistory}
+            onSelectCity={searchHistoryCity}
+          />
+        </motion.div>
       </div>
-    </div>
+    </motion.main>
   );
 }
