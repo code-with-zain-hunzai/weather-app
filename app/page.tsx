@@ -1,4 +1,5 @@
 "use client"
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -266,7 +267,7 @@ export default function WeatherApp() {
                   animate="visible"
                   className="flex justify-center mb-4"
                 >
-                  <img
+                  <Image
                     src={`https://openweathermap.org/img/wn/${currentWeather.weather[0].icon}@4x.png`}
                     alt={currentWeather.weather[0].description}
                     className="w-24 h-24"
